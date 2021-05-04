@@ -3,8 +3,8 @@
 const inputCsv = './input.csv';
 const outputJson = './output.json';
 
-const apiKey = 'd54234f9b3b1ddf124c70cf33484e139';
-const baseUrl = 'https://api.positionstack.com';
+const apiKey = '5f3cfb853822b89185fb37befa70904c';
+const baseUrl = 'http://api.positionstack.com';
 
 let outputJsonObj = null;
 let lineCount = 0;
