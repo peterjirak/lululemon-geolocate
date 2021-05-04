@@ -174,6 +174,15 @@ function main() {
     } catch (err) {
         const failureMsg = `Failed to open ${outputJson} for writing: ${err}`;
         console.error(failureMsg);
+        throw(err);
+    }
+    let outputJsonStr = JSON.stringify(outputJsonObj, null, 4);
+    if (!outputJsonStr.matches(/\}$/)) {
+        const failureMsg = `The last character when we dump the output JSON ` +
+                           `object is not a closing curly brace (which ` +
+                           `indicates the end of an object). Cannot continue.`;
+        console.error(failureMsg);
+        throw(new SyntaxError(failureMsg));
     }
     const lineReader = require('line-reader');
     lineReader.eachLine(inputCsv, processLine);
