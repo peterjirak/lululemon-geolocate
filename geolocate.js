@@ -96,13 +96,53 @@ function getOutputJsonObject(filename) {
 
 function getHttpResponseHandler(storeNumber, address) {
     const handler = (response) => {
-        let resultObj = {
-            storeNumber: response
-        };
-        let responseStr = JSON.stringify(resultObj);
-        responseStr = responseStr.replace(/^\{/, '');
-        responseStr = responseStr.replace(/\n\}$/, '');
-        fs.appendFileSync(outputJson, responseStr, {encoding: 'utf8', mode: 0o640});
+        if (!response.data || !response.data.data || response.data.data.length < 1) {
+            const warningMsg = `SKIPPING STORE ${storeNumber}: Failed to get ` +
+                               `a response that has data from API endpoint. ` +
+                               `No result retrieved for the address ` +
+                               `${address}. The given store will be omitted ` +
+                               `from the result set.`;
+            console.warn(warningMsg);
+        } else {
+            // AXIOS yields an immutable response. Attempting to modify it will
+            // yield a fatal exception. We know what the shape of that data is
+            // supposed to be, so we use the spread operator to make a copy of it.
+            let geoLocationObj = {...response.data.data[0]};
+
+            const latitude = geoLocationObj.latitude;
+            const longitude = geoLocationObj.longitude;
+
+            delete geoLocationObj.latitude;
+            delete geoLocationObj.longitude;
+
+            if (!latitude && latitude !== 0) {
+                const warningMsg = `OMITTING geopoint for STORE ` +
+                                   `${storeNumber}. The data received ` +
+                                   `from the HTTP GET request for the address ` +
+                                   `'${address}' does not contain a valid latitude.`;
+                console.warn(warningMsg);
+            } else if (!longitude && longitude !== 0) {
+                const warningMsg = `OMITTING geopoint for STORE ` +
+                                   `${storeNumber}. The data received ` +
+                                   `from the HTTP GET request for the address ` +
+                                   `'${address}' does not contain a valid longitude.`;
+                console.warn(warningMsg);
+            } else {
+                const geopoint = {
+                    lat: latitude,
+                    long: longitude
+                };
+                geoLocationObj.geopoint = geopoint;
+            }
+
+            let resultObj = {
+                [storeNumber]: geoLocationObj
+            };
+            let resultStr = JSON.stringify(resultObj, null, 4);
+            resultStr = resultStr.replace(/^\{/, '');
+            resultStr = resultStr.replace(/\n\}$/, '');
+            fs.appendFileSync(outputJson, `,${resultStr}`, {encoding: 'utf8', mode: 0o640});
+        }
     }
 
     return handler;
@@ -114,7 +154,7 @@ function geolocateStoreAddress(storeNumber, address) {
     const axiosRequest = {
         method: 'get',
         baseUrl: baseUrl,
-        url: url,
+        url: `${baseUrl}${url}`,
         params: {
             access_key: apiKey,
             query: address
