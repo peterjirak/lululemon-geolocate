@@ -184,6 +184,13 @@ function main() {
         console.error(failureMsg);
         throw(new SyntaxError(failureMsg));
     }
+
+    // I am dropping the closing curly brace from the output JSON string.
+    // I will add a closing curly brace back in before this program completes.
+    outputJsonStr = outputJsonStr.replace(/\}$/, '');
+
+    fs.writeSync(outputFileDescriptor, outputJsonStr, 0);
+
     const lineReader = require('line-reader');
     lineReader.eachLine(inputCsv, processLine);
 }
