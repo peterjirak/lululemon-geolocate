@@ -1,0 +1,12 @@
+{
+	"00120": {
+		"street_address": "970 Robson Street",
+		"locality": "Vancouver",
+		"region": "British Columbia",
+		"country": "Canada",
+		"geopoint": {
+			"lat": 49.283026,
+			"long": -123.122826
+		}
+	}
+}

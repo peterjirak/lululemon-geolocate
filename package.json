@@ -1,0 +1,20 @@
+{
+  "name": "problem",
+  "version": "1.0.0",
+  "description": "SImple test problem from Lululemon used in skills assessment test.",
+  "main": "geolocate.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "geolocate",
+    "lululemon",
+    "retail"
+  ],
+  "author": "Peter Eldritch",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "line-reader": "^0.4.0"
+  }
+}
