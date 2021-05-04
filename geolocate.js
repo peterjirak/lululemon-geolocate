@@ -100,7 +100,12 @@ function handleHttpResponseFromApiCall(reponse) {
 
 function getHttpResponseHandler(storeNumber, address) {
     const handler = (response) => {
-
+        let resultObj = {
+            storeNumber: response
+        };
+        let responseStr = JSON.stringify(resultObj);
+        responseStr = ",\n" + responseStr.replace(/^/m, '    ');
+        fs.appendFileSync(outputJson, responseStr);
     }
 
     return handler;
@@ -192,7 +197,7 @@ function main() {
         // newline character
         outputJsonStr = "{\n";
     } else {
-        outputJsonStr = outputJsonStr.replace(/\}$/, '');
+        outputJsonStr = outputJsonStr.replace(/\n{0,1}\}$/, '');
     }
 
     let bytesWritten = null;
