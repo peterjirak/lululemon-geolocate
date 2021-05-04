@@ -8,6 +8,7 @@ const baseUrl = 'https://api.positionstack.com';
 
 let outputJsonObj = null;
 let lineCount = 0;
+let outputFileDescriptor = null;
 
 // Complete me!
 // Notes:
@@ -168,6 +169,12 @@ function main() {
         throw(new TypeError(failureMsg));
     }
     outputJsonObj = getOutputJsonObject(outputJson);
+    try {
+        outputFileDescriptor = fs.openSync(outputJson, 'w', 0o640);
+    } catch (err) {
+        const failureMsg = `Failed to open ${outputJson} for writing: ${err}`;
+        console.error(failureMsg);
+    }
     const lineReader = require('line-reader');
     lineReader.eachLine(inputCsv, processLine);
 }
