@@ -94,10 +94,6 @@ function getOutputJsonObject(filename) {
     }
 }
 
-function handleHttpResponseFromApiCall(reponse) {
-
-}
-
 function getHttpResponseHandler(storeNumber, address) {
     const handler = (response) => {
         let resultObj = {
@@ -132,7 +128,7 @@ function geolocateStoreAddress(storeNumber, address) {
     ).catch(
         (err)=> {
             const failureMsg = `Attempt to make HTTP GET request to ` +
-                               `${baseUrl}/${url} to query for address ` +
+                               `${baseUrl}${url} to query for address ` +
                                `${address} failed: ${err}`;
             console.error(failureMsg);
             throw(new Error(failureMsg));
@@ -195,7 +191,7 @@ function main() {
         throw(err);
     }
     let outputJsonStr = JSON.stringify(outputJsonObj, null, 4);
-    if (!outputJsonStr.matches(/\}$/)) {
+    if (!outputJsonStr.match(/\}$/)) {
         const failureMsg = `The last character when we dump the output JSON ` +
                            `object is not a closing curly brace (which ` +
                            `indicates the end of an object). Cannot continue.`;
