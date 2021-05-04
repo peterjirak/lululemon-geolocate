@@ -104,26 +104,39 @@ function getHttpResponseHandler(storeNumber, address) {
             storeNumber: response
         };
         let responseStr = JSON.stringify(resultObj);
-        responseStr = ",\n" + responseStr.replace(/^/m, '    ');
-        fs.appendFileSync(outputJson, responseStr);
+        responseStr = responseStr.replace(/^\{/, '');
+        responseStr = responseStr.replace(/\n\}$/, '');
+        fs.appendFileSync(outputJson, responseStr, {encoding: 'utf8', mode: 0o640});
     }
 
     return handler;
 }
 
 function geolocateStoreAddress(storeNumber, address) {
-    axios({
+    const responseHandler = getHttpResponseHandler(storeNumber, address);
+    const url = '/v1/forward';
+    const axiosRequest = {
         method: 'get',
         baseUrl: baseUrl,
-        url: '/v1/forward',
+        url: url,
         params: {
-            access_key,
+            access_key: apiKey,
             query: address
         }
-    }).then(
+    };
 
+    axios(
+        axiosRequest
+    ).then(
+        responseHandler
     ).catch(
-
+        (err)=> {
+            const failureMsg = `Attempt to make HTTP GET request to ` +
+                               `${baseUrl}/${url} to query for address ` +
+                               `${address} failed: ${err}`;
+            console.error(failureMsg);
+            throw(new Error(failureMsg));
+        }
     );
 }
 
@@ -154,7 +167,7 @@ function processLine(line) {
                 `previously already performed the geolocate operation for that store.`
             );
         } else {
-
+            geolocateStoreAddress(storeNumber, inputAddress);
         }
     }
 }
