@@ -8,7 +8,6 @@ const baseUrl = 'https://api.positionstack.com';
 
 let outputJsonObj = null;
 let lineCount = 0;
-let outputFileDescriptor = null;
 
 // Complete me!
 // Notes:
@@ -169,6 +168,7 @@ function main() {
         throw(new TypeError(failureMsg));
     }
     outputJsonObj = getOutputJsonObject(outputJson);
+    let outputFileDescriptor = null;
     try {
         outputFileDescriptor = fs.openSync(outputJson, 'w', 0o640);
     } catch (err) {
@@ -187,9 +187,40 @@ function main() {
 
     // I am dropping the closing curly brace from the output JSON string.
     // I will add a closing curly brace back in before this program completes.
-    outputJsonStr = outputJsonStr.replace(/\}$/, '');
+    if (outputJsonStr === '{') {
+        // I want the opening curly brace to be on the first line followed by a
+        // newline character
+        outputJsonStr = "{\n";
+    } else {
+        outputJsonStr = outputJsonStr.replace(/\}$/, '');
+    }
 
-    fs.writeSync(outputFileDescriptor, outputJsonStr, 0);
+    let bytesWritten = null;
+
+    try {
+        bytesWritten = fs.writeSync(outputFileDescriptor, outputJsonStr, 0);
+    } catch (err) {
+        const failureMsg = `Attempt to write the partial result to ${outputJson} failed: ${err}`;
+        console.error(failureMsg);
+        throw(new InternalError(failureMsg));
+    }
+
+    if (bytesWritten < outputJsonStr.length) {
+        const failureMsg = `Wrote ${bytesWritten} bytes to the ` +
+                           `file ${outputJson}. Expected to write ` +
+                           `${outputJsonStr.length} bytes to that file.`;
+        console.error(failureMsg);
+        throw(new InternalError(failureMsg));
+    }
+
+    try {
+        fs.closeSync(outputFileDescriptor);
+    } catch (err) {
+        const failureMsg = `Failed to close the file descriptor for writing ` +
+                           `to the file ${outputJson}: ${err}`;
+        console.error(failureMsg);
+        throw(new InternalError(failureMsg));
+    }
 
     const lineReader = require('line-reader');
     lineReader.eachLine(inputCsv, processLine);
