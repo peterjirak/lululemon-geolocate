@@ -31,6 +31,7 @@ let lineCount = 0;
 
 const fs = require('fs');
 const axios = require('axios');
+const isEmpty = require('lodash.isempty');
 
 function loadOutputJson(filename) {
     let outputJsonText = null;
@@ -94,15 +95,25 @@ function getOutputJsonObject(filename) {
     }
 }
 
+function extractResponsePayload(response) {
+    if (!response.data || !response.data.data ||
+        response.data.data.length < 1 || isEmpty(response.data.data[0])) {
+        return null;
+    } else {
+        return response.data.data[0];
+    }
+}
+
 function getHttpResponseHandler(storeNumber, address) {
     const handler = (response) => {
-        if (!response.data || !response.data.data || response.data.data.length < 1) {
+        const data = extractResponsePayload(response);
+        if (!data) {
             const warningMsg = `SKIPPING STORE ${storeNumber}: Failed to get ` +
                                `a response that has data from API endpoint. ` +
                                `No result retrieved for the address ` +
                                `${address}. The given store will be omitted ` +
                                `from the result set.`;
-            console.warn(warningMsg);
+            console.log(warningMsg);
         } else {
             // AXIOS yields an immutable response. Attempting to modify it will
             // yield a fatal exception. We know what the shape of that data is
@@ -114,6 +125,14 @@ function getHttpResponseHandler(storeNumber, address) {
 
             delete geoLocationObj.latitude;
             delete geoLocationObj.longitude;
+
+            // The type property in the object returned from the HTTP GET API
+            // endpoint just indicates the type of the query performed. Based on
+            // our example input.csv, it appears that this may always be of type
+            // 'address'. This data is not useful nor interesting, but could
+            // potentially be distracting or confusing. Let's just go ahead
+            // and delete it:
+            delete geoLocationObj.type;
 
             if (!latitude && latitude !== 0) {
                 const warningMsg = `OMITTING geopoint for STORE ` +
