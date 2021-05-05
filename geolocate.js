@@ -319,7 +319,9 @@ if (outputJson && fs.existsSync(outputJson)) {
         console.error(failureMsg);
         throw(new TypeError(failureMsg));
     } else {
-        fs.appendFileSync(outputJson, "\n}", {encoding: 'utf8', mode: 0o640});
+//        console.log(`Append closing curly brace on to the end of the ` +
+//                    `contents ${outputJson}`);
+//        fs.appendFileSync(outputJson, "\n}", {encoding: 'utf8', mode: 0o640});
     }
 } else {
     const failureMsg = `geolocate.js did not generate the output file ${outputJson}.`;
