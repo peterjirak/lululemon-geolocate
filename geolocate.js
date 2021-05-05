@@ -106,7 +106,7 @@ function extractResponsePayload(response) {
 }
 
 function getHttpResponseHandler(storeNumber, address) {
-    const handler = (response) => {
+    const handler = async (response) => {
         const data = extractResponsePayload(response);
         if (!data) {
             const warningMsg = `SKIPPING STORE ${storeNumber}: Failed to get ` +
@@ -183,14 +183,11 @@ function getHttpResponseHandler(storeNumber, address) {
             // This means the output JSON file will always contain a valid JSON
             // object.
             const mutex = new Mutex();
-            mutex
-                 .acquire()
-                 .then(
-                     (release) => {
+            await mutex.runExclusive(
+                async () => {
                          const outputFileStats = fs.statSync(outputJson);
-                         fs.truncateSync(outputJson, outputFileStats.size);
+//                         fs.truncateSync(outputJson, outputFileStats.size);
                          fs.appendFileSync(outputJson, `,${resultStr}`, {encoding: 'utf8', mode: 0o640});
-                         release();
                      }
                  )
         }
