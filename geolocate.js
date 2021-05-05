@@ -187,7 +187,7 @@ function getHttpResponseHandler(storeNumber, address) {
             await mutex.runExclusive(
                 async () => {
                          const outputFileStats = fs.statSync(outputJson);
-//                         fs.truncateSync(outputJson, outputFileStats.size);
+                         fs.truncateSync(outputJson, outputFileStats.size - 2);
                          fs.appendFileSync(outputJson, `,${resultStr}`, {encoding: 'utf8', mode: 0o640});
                      }
                  )
