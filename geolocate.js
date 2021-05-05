@@ -1,9 +1,5 @@
 'use strict';
 
-const fs = require('fs');
-const axios = require('axios');
-const isEmpty = require('lodash.isempty');
-
 const inputCsv = './input.csv';
 const outputJson = './output.json';
 
@@ -12,8 +8,6 @@ const baseUrl = 'http://api.positionstack.com';
 
 let outputJsonObj = null;
 let lineCount = 0;
-
-let requestGeolocationDataCount = 0;
 
 // Complete me!
 // Notes:
@@ -34,6 +28,10 @@ let requestGeolocationDataCount = 0;
 //    server-side Node.JS.
 //
 //    https://www.npmjs.com/package/axios
+
+const fs = require('fs');
+const axios = require('axios');
+const isEmpty = require('lodash.isempty');
 
 function loadOutputJson(filename) {
     let outputJsonText = null;
@@ -197,39 +195,27 @@ function geolocateStoreAddress(storeNumber, address) {
     );
 }
 
-function processLine(err, reader) {
-    if (err) {
-        const failureMsg = `Call to processLine failed: ${err}`
-        console.error(failureMsg);
-        throw(new Error(failureMsg));
-    }
+function processLine(line) {
     lineCount += 1;
     line = line.trim();
     if (lineCount === 1) {
         if (line.toLowerCase() !== 'store,address') {
-            const failureMsg = `The first line of the input CSV file ` +
-                               `${inputCsv} is not the header 'Store,Address'.`;
-            console.error(failureMsg);
-            throw(new SyntaxError(failureMsg));
+            throw(new SyntaxError(`The first line of the input CSV file ` +
+                                  `${inputCsv} is not the header 'Store,Address'.`));
         }
     } else {
         const matches = line.match(/^([0-9]+),(.+)$/);
         if (!matches) {
-            const failureMsg = `Error encountered on line number ${lineCount} ` +
-                               `in file ${inputCsv}. Expected a store number, ` +
-                               `followed by a comma, followed by an address. ` +
-                               `Line was not as expected.`;
-            console.error(failure);
-            throw(new SyntaxError(failureMsg));
+            throw(new SyntaxError(`Error encountered on line number ${lineCount} ` +
+                                  `in file ${inputCsv}. Expected a store number, ` +
+                                  `followed by a comma, followed by an address. ` +
+                                  `Line was not as expected.`));
         }
 
         const storeNumber = matches[1];
         const inputAddress = matches[2].trim();
-        requestGeolocationDataCount += 1;
 
         if (outputJsonObj[storeNumber]) {
-            geolocationDataPreviouslyRetrievedCount += 1;
-            requestGeolocationDataCount -= 1;
             console.log(
                 `Skipping line number ${lineCount} in the file ${inputCsv}. ` +
                 `That line is for store number ${storeNumber}, but we ` +
@@ -310,9 +296,8 @@ function main() {
     }
 
     const lineReader = require('line-reader');
-    lineReader.open(inputCsv,
-    )
-} // end function main()
+    lineReader.eachLine(inputCsv, processLine);
+}
 
 try {
     main();
