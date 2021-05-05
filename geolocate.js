@@ -113,7 +113,7 @@ function getHttpResponseHandler(storeNumber, address) {
                                `No result retrieved for the address ` +
                                `${address}. The given store will be omitted ` +
                                `from the result set.`;
-            console.log(warningMsg);
+            console.warn(warningMsg);
         } else {
             // AXIOS yields an immutable response. Attempting to modify it will
             // yield a fatal exception. We know what the shape of that data is
@@ -299,4 +299,30 @@ function main() {
     lineReader.eachLine(inputCsv, processLine);
 }
 
-main();
+try {
+    main();
+} catch (err) {
+    if (err) {
+        const failureMsg = `Attempt to perform the geolocate operation given ` +
+                           `the input file '${inputCsv}' failed: ${err}`;
+        console.error(failureMsg);
+    }
+}
+
+if (outputJson && fs.existsSync(outputJson)) {
+    // The output JSON file exists.
+    const outputFileStats = fs.statSync(outputJson);
+    if (outputFileStats.isDirectory()) {
+        const failureMsg = `${outputJson} was specified as the output JSON ` +
+                           `file. However, that path is a directory and ` +
+                           `not a file.`;
+        console.error(failureMsg);
+        throw(new TypeError(failureMsg));
+    } else {
+        fs.appendFileSync(outputJson, "\n}", {encoding: 'utf8', mode: 0o640});
+    }
+} else {
+    const failureMsg = `geolocate.js did not generate the output file ${outputJson}.`;
+    console.error(failureMsg);
+    throw(new Error(failureMsg));
+}
