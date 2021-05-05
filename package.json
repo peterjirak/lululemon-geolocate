@@ -14,6 +14,7 @@
   "author": "Peter Eldritch",
   "license": "ISC",
   "dependencies": {
+    "async-mutex": "^0.3.1",
     "axios": "^0.21.1",
     "line-reader": "^0.4.0",
     "lodash.isempty": "^4.4.0"

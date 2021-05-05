@@ -32,6 +32,7 @@ let lineCount = 0;
 const fs = require('fs');
 const axios = require('axios');
 const isEmpty = require('lodash.isempty');
+const Mutex = require('async-mutex').Mutex;
 
 function loadOutputJson(filename) {
     let outputJsonText = null;
@@ -118,7 +119,7 @@ function getHttpResponseHandler(storeNumber, address) {
             // AXIOS yields an immutable response. Attempting to modify it will
             // yield a fatal exception. We know what the shape of that data is
             // supposed to be, so we use the spread operator to make a copy of it.
-            let geoLocationObj = {...response.data.data[0]};
+            let geoLocationObj = {...data};
 
             const latitude = geoLocationObj.latitude;
             const longitude = geoLocationObj.longitude;
@@ -159,8 +160,39 @@ function getHttpResponseHandler(storeNumber, address) {
             };
             let resultStr = JSON.stringify(resultObj, null, 4);
             resultStr = resultStr.replace(/^\{/, '');
-            resultStr = resultStr.replace(/\n\}$/, '');
-            fs.appendFileSync(outputJson, `,${resultStr}`, {encoding: 'utf8', mode: 0o640});
+
+            // We have the text that contains the geolocate data for the
+            // given store.
+            //
+            // We need to write that to the output JSON file. However, we
+            // want any other asynchronous calls to wait so that two
+            // asynchronous calls are not trying to update the same file at the
+            // same time.
+            //
+            // Additionally, on the final update we need a closing brace to
+            // close the outer object.
+            //
+            // To handle this correctly, we simply output that closing brace
+            // every single time. However, aqs a part of each file update,
+            // before we append to the file, we shorten it by a single character,
+            // the closing brace character.
+            //
+            // Effectively each time we append to the file we first strip off any
+            // former closing brace character off the end of the file.
+            //
+            // This means the output JSON file will always contain a valid JSON
+            // object.
+            const mutex = new Mutex();
+            mutex
+                 .acquire()
+                 .then(
+                     (release) => {
+                         const outputFileStats = fs.statSync(outputJson);
+                         fs.truncateSync(outputJson, outputFileStats.size);
+                         fs.appendFileSync(outputJson, `,${resultStr}`, {encoding: 'utf8', mode: 0o640});
+                         release();
+                     }
+                 )
         }
     }
 
@@ -256,43 +288,6 @@ function main() {
                            `indicates the end of an object). Cannot continue.`;
         console.error(failureMsg);
         throw(new SyntaxError(failureMsg));
-    }
-
-    // I am dropping the closing curly brace from the output JSON string.
-    // I will add a closing curly brace back in before this program completes.
-    if (outputJsonStr === '{') {
-        // I want the opening curly brace to be on the first line followed by a
-        // newline character
-        outputJsonStr = "{\n";
-    } else {
-        outputJsonStr = outputJsonStr.replace(/\n{0,1}\}$/, '');
-    }
-
-    let bytesWritten = null;
-
-    try {
-        bytesWritten = fs.writeSync(outputFileDescriptor, outputJsonStr, 0);
-    } catch (err) {
-        const failureMsg = `Attempt to write the partial result to ${outputJson} failed: ${err}`;
-        console.error(failureMsg);
-        throw(new InternalError(failureMsg));
-    }
-
-    if (bytesWritten < outputJsonStr.length) {
-        const failureMsg = `Wrote ${bytesWritten} bytes to the ` +
-                           `file ${outputJson}. Expected to write ` +
-                           `${outputJsonStr.length} bytes to that file.`;
-        console.error(failureMsg);
-        throw(new InternalError(failureMsg));
-    }
-
-    try {
-        fs.closeSync(outputFileDescriptor);
-    } catch (err) {
-        const failureMsg = `Failed to close the file descriptor for writing ` +
-                           `to the file ${outputJson}: ${err}`;
-        console.error(failureMsg);
-        throw(new InternalError(failureMsg));
     }
 
     const lineReader = require('line-reader');
